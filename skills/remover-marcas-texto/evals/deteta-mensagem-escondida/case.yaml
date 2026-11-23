@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: deteta-mensagem-escondida
+expected_outcome: |
+  Encontra caracteres de largura zero, hífen suave, um homóglifo cirílico e uma mensagem escondida em caracteres tag (ID-7731); grava newsletter.limpo.txt sem eles e mantém o emoji composto e o texto em russo.
+context:
+  scaffold_script: place-files.sh

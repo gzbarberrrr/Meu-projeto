@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: texto-limpo-sem-marcas
+expected_outcome: |
+  Analisa o texto e responde que não encontrou marcas de água textuais, sem inventar problemas.
