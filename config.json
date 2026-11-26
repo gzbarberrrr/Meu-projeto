@@ -1,0 +1,40 @@
+{
+  "shop": {
+    "name": "Barbearia",
+    "tagline": "Cortes clássicos, barba afinada, zero espera.",
+    "address": "Rua Exemplo 123, 1000-000 Lisboa",
+    "phone": "+351 900 000 000",
+    "whatsapp": "351900000000",
+    "email": "geral@exemplo.pt",
+    "instagram": "",
+    "nif": "000000000",
+    "timezone": "Europe/Lisbon"
+  },
+  "booking": {
+    "slotMinutes": 30,
+    "daysAhead": 30,
+    "minNoticeMinutes": 30
+  },
+  "hours": {
+    "0": [],
+    "1": [["10:00", "13:00"], ["14:00", "19:00"]],
+    "2": [["09:30", "13:00"], ["14:00", "20:00"]],
+    "3": [["09:30", "13:00"], ["14:00", "20:00"]],
+    "4": [["09:30", "13:00"], ["14:00", "20:00"]],
+    "5": [["09:30", "13:00"], ["14:00", "20:00"]],
+    "6": [["09:00", "14:00"]]
+  },
+  "closedDates": ["2026-12-25", "2027-01-01"],
+  "barbers": [
+    { "id": "b1", "name": "Barbeiro 1" },
+    { "id": "b2", "name": "Barbeiro 2" }
+  ],
+  "services": [
+    { "id": "corte", "name": "Corte", "description": "Corte à tesoura ou máquina, lavagem e finalização.", "minutes": 30, "price": 15 },
+    { "id": "barba", "name": "Barba", "description": "Aparar e desenhar a barba com toalha quente.", "minutes": 30, "price": 10 },
+    { "id": "corte-barba", "name": "Corte + Barba", "description": "O serviço completo, com toalha quente.", "minutes": 60, "price": 22 },
+    { "id": "fade", "name": "Fade / Degradê", "description": "Degradê detalhado com acabamento à navalha.", "minutes": 45, "price": 18 },
+    { "id": "crianca", "name": "Corte criança", "description": "Até aos 12 anos.", "minutes": 30, "price": 12 },
+    { "id": "sobrancelha", "name": "Sobrancelha", "description": "Limpeza e desenho à navalha.", "minutes": 15, "price": 5 }
+  ]
+}

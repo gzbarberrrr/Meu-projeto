@@ -1,0 +1,12 @@
+{
+  "name": "barbearia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Site de marcações para barbearia com dashboard e base de dados SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "seed": "node --no-warnings scripts/seed.js"
+  },
+  "engines": { "node": ">=22.13" }
+}
