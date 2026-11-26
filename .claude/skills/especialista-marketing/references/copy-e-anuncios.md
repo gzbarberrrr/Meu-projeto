@@ -54,7 +54,7 @@ Cada variante leva nota de 0 a 20 em cinco perspetivas:
 - 70-84: reescreve corrigindo a objeção específica do painel e volta a avaliar (no máximo 3 passagens).
 - 85+: candidata. Mostra as 3-5 melhores com nota e uma linha sobre quando escolher cada uma.
 
-## Fase 3: marcas de IA a cortar
+## Fase 3: Marcas de IA a cortar
 
 Reescreve, não te limites a apagar palavras: se o ritmo de máquina ficar, o texto continua a soar a IA.
 
