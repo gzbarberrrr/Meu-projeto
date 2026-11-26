@@ -1,0 +1,120 @@
+{
+  "shop": {
+    "name": "GZBarber",
+    "tagline": "Barbershop desde 2024. Cortes com detalhe por 7 €, marcação em segundos.",
+    "address": "",
+    "phone": "+351 900 000 000",
+    "whatsapp": "351900000000",
+    "email": "geral@exemplo.pt",
+    "instagram": "",
+    "nif": "000000000",
+    "timezone": "Europe/Lisbon"
+  },
+  "booking": {
+    "startDate": "2026-11-30",
+    "daysAhead": 30,
+    "minNoticeMinutes": 30,
+    "slotMinutes": 45
+  },
+  "slots": {
+    "_info": "Horas de início das marcações por dia da semana (0 = domingo). Cada corte dura o tempo do serviço.",
+    "0": [],
+    "1": [
+      "17:30",
+      "18:15"
+    ],
+    "2": [
+      "14:00",
+      "14:45",
+      "15:30",
+      "16:15",
+      "17:00",
+      "17:45",
+      "18:15"
+    ],
+    "3": [
+      "14:00",
+      "14:45",
+      "15:30",
+      "16:15",
+      "17:00",
+      "17:45",
+      "18:15"
+    ],
+    "4": [
+      "16:40",
+      "17:25",
+      "18:10"
+    ],
+    "5": [
+      "12:30",
+      "13:15",
+      "14:00",
+      "14:45",
+      "15:30",
+      "16:15",
+      "17:00",
+      "17:45",
+      "18:15"
+    ],
+    "6": []
+  },
+  "hours": {
+    "0": [],
+    "1": [
+      [
+        "17:30",
+        "19:00"
+      ]
+    ],
+    "2": [
+      [
+        "14:00",
+        "19:00"
+      ]
+    ],
+    "3": [
+      [
+        "14:00",
+        "19:00"
+      ]
+    ],
+    "4": [
+      [
+        "16:40",
+        "19:00"
+      ]
+    ],
+    "5": [
+      [
+        "12:30",
+        "19:00"
+      ]
+    ],
+    "6": []
+  },
+  "closedDates": [
+    "2026-12-25",
+    "2027-01-01"
+  ],
+  "barbers": [
+    {
+      "id": "b1",
+      "name": "GZ",
+      "phone": ""
+    }
+  ],
+  "services": [
+    {
+      "id": "corte",
+      "name": "Corte",
+      "description": "Corte de cabelo com acabamento.",
+      "minutes": 45,
+      "price": 7
+    }
+  ],
+  "notifications": {
+    "reminderHoursBefore": 24,
+    "barberPhone": ""
+  }
+}

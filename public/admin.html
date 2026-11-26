@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Dashboard | GZBarber</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/img/icon.png">
+  <style>
+    body { background: #0c0c0d; }
+    .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .login .panel { width: min(400px, 100%); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; flex-wrap: wrap; }
+    .topbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 8px 0 20px; }
+    .kpi { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+    .kpi small { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+    .kpi b { display: block; font-size: 1.8rem; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .kpi span { color: var(--muted); font-size: .85rem; }
+    .grid2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 960px) { .grid2 { grid-template-columns: 1fr; } }
+    .panel h3 { font-size: 1.05rem; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .chart { width: 100%; height: 300px; }
+    .chart text { fill: var(--muted); font-size: 11px; font-family: var(--font); }
+    .chart .bar { fill: var(--accent); opacity: .85; transition: opacity .15s; }
+    .chart .bar:hover { opacity: 1; }
+    .chart .bar.today { fill: #ffffff; }
+    .tip { position: fixed; pointer-events: none; background: #000; border: 1px solid var(--line); padding: 6px 10px; border-radius: 8px; font-size: .85rem; display: none; z-index: 200; }
+    .agenda { display: grid; gap: 8px; max-height: 340px; overflow: auto; }
+    .agenda-item { display: grid; grid-template-columns: 58px 1fr auto; gap: 12px; align-items: center; background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px; }
+    .agenda-item.concluida { border-left-color: var(--ok); opacity: .7; }
+    .agenda-item.falta { border-left-color: var(--bad); opacity: .7; }
+    .agenda-item time { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .agenda-item small { color: var(--muted); display: block; }
+    .bars-list { display: grid; gap: 10px; }
+    .bars-list .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: .92rem; }
+    .bars-list .track { grid-column: 1 / -1; height: 6px; background: var(--bg-2); border-radius: 6px; overflow: hidden; }
+    .bars-list .fill { height: 100%; background: var(--accent); border-radius: 6px; }
+    .filters { display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto; gap: 10px; margin-bottom: 14px; }
+    @media (max-width: 860px) { .filters { grid-template-columns: 1fr 1fr; } .filters .q { grid-column: 1 / -1; } }
+    .filters input, .filters select { padding: 9px 12px; min-width: 0; }
+    .grid2 > *, .filters > * { min-width: 0; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 760px; }
+    th { text-align: left; color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; padding: 10px; border-bottom: 1px solid var(--line); }
+    td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    tr:hover td { background: rgba(255, 255, 255, .02); }
+    td small { color: var(--muted); display: block; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+    .badge.confirmada { background: rgba(106, 168, 255, .14); color: var(--info); }
+    .badge.concluida { background: rgba(76, 195, 138, .14); color: var(--ok); }
+    .badge.cancelada { background: rgba(169, 165, 156, .14); color: var(--muted); }
+    .badge.falta { background: rgba(239, 107, 107, .14); color: var(--bad); }
+    .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+    .icon-btn { background: var(--bg-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; }
+    .icon-btn:hover { border-color: var(--accent); }
+    .live { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); }
+    .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity: .3; } }
+    .tabs { display: flex; gap: 6px; }
+    .tabs button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 4px 12px; cursor: pointer; font: 600 .8rem var(--font); }
+    .tabs button.on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+    .msgs { display: grid; gap: 8px; max-height: 380px; overflow: auto; }
+    .msg { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .9rem; }
+    .msg p { margin: 2px 0 0; color: var(--muted); overflow-wrap: anywhere; }
+    .msg .tag { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+    .tag.enviada { background: rgba(76, 195, 138, .14); color: var(--ok); }
+    .tag.manual { background: rgba(231, 184, 74, .14); color: var(--warn); }
+    .tag.falhou { background: rgba(239, 107, 107, .14); color: var(--bad); }
+    .btn-wa { background: #25d366; color: #fff; border-radius: 999px; padding: 5px 12px; font-size: .82rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    @media (max-width: 600px) { .msg { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="login" id="loginView" hidden>
+    <form class="panel" id="loginForm">
+      <img src="/img/logo.webp" alt="GZBarber" width="740" height="620" style="width:180px;height:auto;margin:0 auto 8px"><p class="eyebrow">Área do barbeiro</p>
+      <h2 style="font-size:1.8rem">Entrar no dashboard</h2>
+      <label for="pw">Palavra-passe</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <div class="alert error" id="loginError" role="alert"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px">Entrar</button>
+      <p style="margin-top:16px;text-align:center"><a href="/" class="muted">← Voltar ao site</a></p>
+    </form>
+  </div>
+
+  <div id="appView" hidden>
+    <header class="site-header">
+      <div class="container" style="height:auto">
+        <div class="topbar" style="width:100%">
+          <a href="/" class="logo"><img src="/img/mark.webp" alt="" width="34" height="36"><span id="shopName">GZBARBER</span> <small class="muted" style="font:500 .9rem var(--font);letter-spacing:0">Dashboard</small></a>
+          <div class="actions">
+            <span class="live" id="liveLabel">Ao vivo</span>
+            <button class="btn btn-primary btn-sm" id="newBtn">+ Nova marcação</button>
+            <a class="btn btn-ghost btn-sm" href="/api/admin/export.csv">Exportar CSV</a>
+            <button class="btn btn-ghost btn-sm" id="logoutBtn">Sair</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container" style="padding:20px 0 60px">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid2">
+        <section class="panel">
+          <h3>Marcações por dia <span class="tabs" id="chartTabs"><button class="on" data-mode="count">Marcações</button><button data-mode="revenue">Faturação</button></span></h3>
+          <svg class="chart" id="chart" role="img" aria-label="Gráfico de marcações dos últimos 14 dias"></svg>
+        </section>
+        <section class="panel">
+          <h3>Agenda de hoje <span class="muted" style="font-weight:500;font-size:.85rem" id="todayLabel"></span></h3>
+          <div class="agenda" id="agenda"></div>
+        </section>
+      </div>
+
+      <div class="grid2">
+        <section class="panel">
+          <h3>Serviços mais pedidos</h3>
+          <div class="bars-list" id="topServices"></div>
+        </section>
+        <section class="panel">
+          <h3>Este mês por barbeiro</h3>
+          <div class="bars-list" id="byBarber"></div>
+        </section>
+      </div>
+
+      <section class="panel" style="margin-bottom:16px">
+        <h3>Mensagens enviadas <span class="muted" style="font-weight:500;font-size:.85rem" id="channelsLabel"></span></h3>
+        <p class="muted" style="font-size:.88rem;margin-top:-6px">Confirmação ao cliente e aviso ao barbeiro quando há uma marcação; lembrete aos dois 1 dia antes. Mensagens sem envio automático ficam aqui com botão de WhatsApp.</p>
+        <div class="msgs" id="msgs"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Todas as marcações <span class="muted" style="font-weight:500;font-size:.85rem" id="countLabel"></span></h3>
+        <div class="filters">
+          <input class="q" id="fq" placeholder="Pesquisar nome, telemóvel ou código" aria-label="Pesquisar">
+          <input type="date" id="ffrom" aria-label="Desde">
+          <input type="date" id="fto" aria-label="Até">
+          <select id="fstatus" aria-label="Estado">
+            <option value="">Todos os estados</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="concluida">Concluída</option>
+            <option value="falta">Falta</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="fclear" type="button">Limpar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Barbeiro</th><th>Preço</th><th>Estado</th><th style="text-align:right">Ações</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="newDialog" aria-labelledby="newTitle">
+    <button class="close" data-close aria-label="Fechar">×</button>
+    <h3 id="newTitle">Nova marcação (balcão / telefone)</h3>
+    <form id="newForm" class="form-grid">
+      <div class="full"><label for="nService">Serviço</label><select id="nService" required></select></div>
+      <div><label for="nBarber">Barbeiro</label><select id="nBarber"></select></div>
+      <div><label for="nDate">Dia</label><input type="date" id="nDate" required></div>
+      <div class="full"><label for="nTime">Hora</label><select id="nTime" required><option value="">Escolha serviço e dia</option></select></div>
+      <div><label for="nName">Nome</label><input id="nName" required maxlength="80"></div>
+      <div><label for="nPhone">Telemóvel</label><input id="nPhone" type="tel" required maxlength="25"></div>
+      <div class="full"><label for="nNotes">Notas</label><input id="nNotes" maxlength="300"></div>
+      <div class="full"><button class="btn btn-primary">Guardar marcação</button></div>
+    </form>
+    <div class="alert error" id="newError" role="alert"></div>
+  </dialog>
+
+  <div class="tip" id="tip"></div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/admin.js"></script>
+</body>
+</html>
