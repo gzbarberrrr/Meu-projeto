@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: calendario-semana-bilingue
+expected_outcome: |
+  Lê o ficheiro do cliente e usa os factos dele (Alfama, turistas, preços, serviço de barba à navalha, 3 reels por semana), entrega um plano semanal com hooks nos três componentes e legendas prontas em PT-PT e em inglês, sem inventar números.
+context:
+  scaffold_script: place-files.sh

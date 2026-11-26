@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: conselho-subir-precos
+expected_outcome: |
+  Conselho simulado com vários mestres, incluindo pelo menos um que discorda, mapa de desacordos, recomendação concreta para a barbearia, e entregáveis: mensagem aos clientes sobre o novo preço e uma ideia para encher terças e quartas.
