@@ -14,7 +14,16 @@ const { chromium } = carregarPlaywright();
 (async () => {
   const ficheiro = process.argv[2];
   if (!ficheiro) { console.error('Uso: node verificar.js <ficheiro.html> [captura.png]'); process.exit(2); }
-  const url = 'file://' + path.resolve(ficheiro);
+  // O ficheiro do Artifact não tem esqueleto (o Artifact acrescenta-o ao publicar):
+  // para testar como no Artifact, envolve-o num esqueleto equivalente numa cópia temporária.
+  const fs = require('fs'), os = require('os');
+  let fonte = fs.readFileSync(ficheiro, 'utf8');
+  if (!/^\s*<!doctype/i.test(fonte)) {
+    fonte = '<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>' + fonte + '</body></html>';
+  }
+  const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'anatomy-')), 'licao.html');
+  fs.writeFileSync(tmp, fonte);
+  const url = 'file://' + tmp;
   const browser = await chromium.launch();
   const falhas = [], avisos = [];
 

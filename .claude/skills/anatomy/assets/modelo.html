@@ -1,10 +1,7 @@
-<!doctype html>
-<html lang="pt-PT">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Sem <!doctype>, <html>, <head> nem <body>: o Artifact acrescenta-os ao publicar. -->
 <!-- SUBSTITUI: título de 2 a 4 palavras -->
 <title>Área do Círculo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* ===== Tokens de cor: usa só estas variáveis ===== */
 :root{
@@ -17,18 +14,18 @@
   :root:not([data-theme="light"]){
     --fundo:#121314; --superficie:#1b1d1f; --linha:#2e3134; --texto:#ecebe8; --suave:#a29f98;
     --acento:#6aa0ff; --a2:#ff7b72; --a3:#4fd1a1; --a4:#f2b84b; --a5:#b592ff;
-    --certo:#4fd1a1; --errado:#ff7b72; --sombra:0 1px 3px rgba(0,0,0,.4);
+    --certo:#4fd1a1; --errado:#ff7b72; --sombra:0 1px 3px rgba(0,0,0,.4); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --fundo:#121314; --superficie:#1b1d1f; --linha:#2e3134; --texto:#ecebe8; --suave:#a29f98;
   --acento:#6aa0ff; --a2:#ff7b72; --a3:#4fd1a1; --a4:#f2b84b; --a5:#b592ff;
-  --certo:#4fd1a1; --errado:#ff7b72; --sombra:0 1px 3px rgba(0,0,0,.4);
+  --certo:#4fd1a1; --errado:#ff7b72; --sombra:0 1px 3px rgba(0,0,0,.4); color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--fundo);color:var(--texto);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-.pagina{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+.pagina{max-width:860px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header h1{font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.15;margin:0 0 6px}
 header .gancho{color:var(--suave);font-size:1.1rem;margin:0}
 
@@ -96,8 +93,6 @@ svg text{font-family:inherit}
   .etapa{padding:14px}
 }
 </style>
-</head>
-<body>
 <div class="pagina">
   <header>
     <!-- SUBSTITUI: título e pergunta-gancho -->
@@ -186,7 +181,7 @@ svg text{font-family:inherit}
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const cor = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const fmt = (x, casas = 1) => x.toLocaleString(document.documentElement.lang || 'pt-PT', {maximumFractionDigits: casas, minimumFractionDigits: 0});
+const fmt = (x, casas = 1) => x.toLocaleString('pt-PT', {maximumFractionDigits: casas, minimumFractionDigits: 0});
 
 /* Liga um slider ao seu <output> e chama cb(valor) em cada movimento. */
 function ligarSlider(id, formatar, cb){
@@ -329,5 +324,3 @@ const Quiz = {verificadores: {}};
   Quiz.verificadores.area1000 = () => Math.abs(Math.PI * r * r - 10000) <= 500;
 })();
 </script>
-</body>
-</html>

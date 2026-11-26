@@ -81,6 +81,8 @@ Usa os componentes que já estão no modelo. Todos os quatro extras entram em ca
   O modelo traz uma mini-lição de exemplo (área do círculo) que deves substituir. Só mexes
   em três sítios: o `<header>`, as `<section class="etapa">` dentro de `<main>`, e o **segundo**
   `<script>` (visualizações). O primeiro `<script>` (utilitários) copia-se tal como está.
+  O modelo não tem `<!doctype>`, `<html>`, `<head>` nem `<body>` de propósito: o Artifact
+  acrescenta-os ao publicar. Não os ponhas de volta.
 - **Cores dentro de SVG e canvas**: em atributos SVG podes usar `fill="var(--a2)"` diretamente.
   Em canvas, ou quando precisas de misturar cores, lê o valor com `cor('--a2')`. Não uses cores
   fixas, senão o modo escuro parte.
