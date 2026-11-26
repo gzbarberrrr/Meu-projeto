@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- SUBSTITUI: título de 2 a 4 palavras -->
+<title>Área do Círculo</title>
+<style>
+/* ===== Tokens de cor: usa só estas variáveis ===== */
+:root{
+  --fundo:#fbfaf7; --superficie:#ffffff; --linha:#e4e1d9; --texto:#1d1c1a; --suave:#6b675e;
+  --acento:#2f6fdb; --a2:#d9534f; --a3:#2a9d6f; --a4:#c88a12; --a5:#8a5cd1;
+  --certo:#2a9d6f; --errado:#d9534f; --sombra:0 1px 3px rgba(0,0,0,.08),0 6px 20px rgba(0,0,0,.05);
+  --raio:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --fundo:#121314; --superficie:#1b1d1f; --linha:#2e3134; --texto:#ecebe8; --suave:#a29f98;
+    --acento:#6aa0ff; --a2:#ff7b72; --a3:#4fd1a1; --a4:#f2b84b; --a5:#b592ff;
+    --certo:#4fd1a1; --errado:#ff7b72; --sombra:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --fundo:#121314; --superficie:#1b1d1f; --linha:#2e3134; --texto:#ecebe8; --suave:#a29f98;
+  --acento:#6aa0ff; --a2:#ff7b72; --a3:#4fd1a1; --a4:#f2b84b; --a5:#b592ff;
+  --certo:#4fd1a1; --errado:#ff7b72; --sombra:0 1px 3px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--fundo);color:var(--texto);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.pagina{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+header h1{font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.15;margin:0 0 6px}
+header .gancho{color:var(--suave);font-size:1.1rem;margin:0}
+
+/* ===== Progresso e navegação ===== */
+.progresso{display:flex;gap:6px;margin:22px 0 14px}
+.progresso button{flex:1;height:6px;border:0;border-radius:3px;background:var(--linha);cursor:pointer;padding:0}
+.progresso button.feito{background:var(--acento);opacity:.45}
+.progresso button.atual{background:var(--acento)}
+.etapa{display:none;background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);box-shadow:var(--sombra);padding:20px}
+.etapa.ativa{display:block;animation:entra .25s ease}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.etapa h2{font-size:1.3rem;margin:0 0 4px}
+.etapa .num{color:var(--suave);font-size:.85rem;text-transform:uppercase;letter-spacing:.06em}
+.dica{color:var(--suave);font-size:.95rem;margin:6px 0 14px}
+.dica::before{content:"👆 "}
+.legenda{font-size:.95rem;margin:12px 0 0}
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:16px}
+.btn{font:inherit;font-weight:600;border:1px solid var(--linha);background:var(--superficie);color:var(--texto);border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer}
+.btn:hover{border-color:var(--acento)}
+.btn.primario{background:var(--acento);border-color:var(--acento);color:#fff}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* ===== Visualização e controlos ===== */
+.vis{width:100%;border-radius:10px;background:var(--fundo);border:1px solid var(--linha);overflow:hidden;touch-action:none}
+.vis svg,.vis canvas{display:block;width:100%;height:auto}
+.controlos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 20px;margin-top:14px}
+.controlo label{display:flex;justify-content:space-between;font-size:.9rem;color:var(--suave)}
+.controlo output{color:var(--texto);font-weight:600;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--acento);height:32px}
+.formula{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--fundo);border:1px dashed var(--linha);border-radius:8px;padding:8px 12px;margin-top:12px;overflow-x:auto}
+
+/* ===== Glossário ===== */
+.termo{border-bottom:2px dotted var(--acento);cursor:help;position:relative}
+.tooltip{position:fixed;z-index:50;max-width:280px;background:var(--texto);color:var(--fundo);font-size:.88rem;line-height:1.4;padding:8px 12px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .12s}
+.tooltip.visivel{opacity:1}
+
+/* ===== Prevê primeiro ===== */
+.preve{border:2px solid var(--a4);border-radius:12px;padding:14px;margin-bottom:14px}
+.preve .pergunta{font-weight:600;margin:0 0 10px}
+.preve .pergunta::before{content:"🤔 Prevê primeiro: ";color:var(--a4)}
+.opcoes{display:flex;flex-wrap:wrap;gap:8px}
+.opcao{font:inherit;border:1px solid var(--linha);background:var(--superficie);color:var(--texto);border-radius:999px;padding:8px 16px;min-height:42px;cursor:pointer}
+.opcao:hover{border-color:var(--acento)}
+.opcao.certa{background:var(--certo);border-color:var(--certo);color:#fff}
+.opcao.errada{background:var(--errado);border-color:var(--errado);color:#fff}
+.feedback{margin:10px 0 0;font-size:.95rem}
+.feedback.ok{color:var(--certo)} .feedback.nao{color:var(--errado)}
+.escondido{display:none!important}
+
+/* ===== Quiz ===== */
+.desafio{border:1px solid var(--linha);border-radius:12px;padding:14px;margin-bottom:12px}
+.desafio .q{font-weight:600;margin:0 0 10px}
+.desafio.resolvido{border-color:var(--certo)}
+.pontuacao{font-size:1.2rem;font-weight:700;text-align:center;margin:16px 0 0}
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header>
+    <!-- SUBSTITUI: título e pergunta-gancho -->
+    <h1>Área do Círculo</h1>
+    <p class="gancho">Se duplicares o raio de uma pizza, quanto mais pizza tens?</p>
+  </header>
+
+  <nav class="progresso" aria-label="Progresso"></nav>
+
+  <main id="etapas">
+    <!-- ============ ETAPA (copia este bloco para cada etapa) ============ -->
+    <section class="etapa" data-titulo="O raio">
+      <div class="num">Etapa 1</div>
+      <h2>O <span class="termo" data-def="Distância do centro do círculo até à borda.">raio</span> controla tudo</h2>
+      <p class="dica">Arrasta o slider e vê o círculo crescer.</p>
+      <div class="vis"><svg id="v1" viewBox="0 0 600 300" role="img" aria-label="Círculo com raio ajustável"></svg></div>
+      <div class="controlos">
+        <div class="controlo"><label for="r1">Raio <output id="r1o"></output></label><input id="r1" type="range" min="10" max="140" value="60"></div>
+      </div>
+      <div class="formula" id="f1"></div>
+      <p class="legenda">Repara: a área cresce muito mais depressa que o raio.</p>
+    </section>
+
+    <!-- ============ ETAPA com "Prevê primeiro" ============ -->
+    <section class="etapa" data-titulo="Duplicar">
+      <div class="num">Etapa 2</div>
+      <h2>Duplicar o raio</h2>
+      <div class="preve" data-certa="4">
+        <p class="pergunta">Se o raio duplicar, a área fica quantas vezes maior?</p>
+        <div class="opcoes">
+          <button class="opcao" data-valor="2">2×</button>
+          <button class="opcao" data-valor="3">3×</button>
+          <button class="opcao" data-valor="4">4×</button>
+        </div>
+        <p class="feedback" data-certo="Isso mesmo: a área depende do raio ao quadrado, 2² = 4." data-errado="Quase toda a gente pensa isso! Vê abaixo porque são 4×."></p>
+      </div>
+      <!-- .apos-prever fica escondido até haver palpite -->
+      <div class="apos-prever">
+        <p class="dica">Arrasta e compara o círculo pequeno com o grande.</p>
+        <div class="vis"><svg id="v2" viewBox="0 0 600 300"></svg></div>
+        <div class="controlos">
+          <div class="controlo"><label for="r2">Raio pequeno <output id="r2o"></output></label><input id="r2" type="range" min="10" max="70" value="40"></div>
+        </div>
+        <p class="legenda">Cabem exatamente 4 círculos pequenos (em área) no grande.</p>
+      </div>
+    </section>
+
+    <!-- ============ ETAPA final: quiz ============ -->
+    <section class="etapa" data-titulo="Quiz">
+      <div class="num">Desafio final</div>
+      <h2>Testa a tua intuição</h2>
+      <div class="quiz">
+        <!-- Desafio de escolha: data-certa = valor da opção certa -->
+        <div class="desafio" data-certa="9">
+          <p class="q">O raio triplica. A área fica…</p>
+          <div class="opcoes"><button class="opcao" data-valor="3">3×</button><button class="opcao" data-valor="6">6×</button><button class="opcao" data-valor="9">9×</button></div>
+          <p class="feedback" data-certo="Certo: 3² = 9." data-errado="Pista: eleva o fator ao quadrado."></p>
+        </div>
+        <!-- Desafio de manipulação: data-verificar = nome de função em Quiz.verificadores -->
+        <div class="desafio" data-verificar="area1000">
+          <p class="q">Põe o slider num raio que dê uma área perto de 10 000 (±500).</p>
+          <div class="controlos"><div class="controlo"><label for="rq">Raio <output id="rqo"></output></label><input id="rq" type="range" min="10" max="100" value="20"></div></div>
+          <p class="formula" id="fq"></p>
+          <button class="btn verificar">Verificar</button>
+          <p class="feedback" data-certo="Boa! r ≈ 56 dá π·56² ≈ 9 852." data-errado="Ainda não. Lembra-te: área = π·r², tenta um raio entre 50 e 60."></p>
+        </div>
+        <div class="desafio" data-certa="metade">
+          <p class="q">Queres metade da área. O raio deve ficar…</p>
+          <div class="opcoes"><button class="opcao" data-valor="metade">≈ 0,71× (1/√2)</button><button class="opcao" data-valor="meio">0,5×</button></div>
+          <p class="feedback" data-certo="Exato: (1/√2)² = 1/2." data-errado="Se o raio for metade, a área fica 1/4. Precisas de um fator menos drástico."></p>
+        </div>
+        <p class="pontuacao"></p>
+      </div>
+    </section>
+  </main>
+
+  <div class="nav">
+    <button class="btn" id="ant">← Anterior</button>
+    <button class="btn primario" id="seg">Seguinte →</button>
+  </div>
+</div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+
+<script>
+/* ================= Utilitários (não alterar) ================= */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const cor = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (x, casas = 1) => x.toLocaleString(document.documentElement.lang || 'pt-PT', {maximumFractionDigits: casas, minimumFractionDigits: 0});
+
+/* Liga um slider ao seu <output> e chama cb(valor) em cada movimento. */
+function ligarSlider(id, formatar, cb){
+  const el = document.getElementById(id), out = document.getElementById(id + 'o');
+  const f = () => { const v = +el.value; if (out) out.textContent = formatar(v); cb && cb(v); };
+  el.addEventListener('input', f); f(); return el;
+}
+/* Cria elementos SVG: svgEl('circle', {cx:10, cy:10, r:5, fill:'var(--acento)'}, pai) */
+function svgEl(tag, attrs = {}, pai){
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (pai) pai.appendChild(e); return e;
+}
+/* Canvas nítido em ecrãs retina. Devolve {ctx, w, h} em pixels CSS. */
+function initCanvas(canvas, alturaRelativa = 0.5){
+  const dpr = window.devicePixelRatio || 1, w = canvas.parentElement.clientWidth, h = Math.round(w * alturaRelativa);
+  canvas.width = w * dpr; canvas.height = h * dpr; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return {ctx, w, h};
+}
+/* Arrastar com rato e dedo dentro de um SVG com viewBox: arrastar(svg, alvo, (x,y)=>{}) */
+function arrastar(svg, alvo, cb){
+  const pt = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  let ativo = false;
+  alvo.style.cursor = 'grab';
+  alvo.addEventListener('pointerdown', e => { ativo = true; alvo.setPointerCapture(e.pointerId); });
+  alvo.addEventListener('pointermove', e => { if (ativo){ const p = pt(e); cb(p.x, p.y); } });
+  alvo.addEventListener('pointerup', () => ativo = false);
+}
+
+/* ================= Etapas (passo-a-passo) ================= */
+const Etapas = (() => {
+  const lista = $$('.etapa'), barra = $('.progresso'); let i = 0;
+  lista.forEach((e, k) => { const b = document.createElement('button'); b.title = e.dataset.titulo || ('Etapa ' + (k + 1)); b.setAttribute('aria-label', b.title); b.onclick = () => ir(k); barra.appendChild(b); });
+  function ir(k){
+    i = Math.max(0, Math.min(lista.length - 1, k));
+    lista.forEach((e, n) => e.classList.toggle('ativa', n === i));
+    $$('button', barra).forEach((b, n) => { b.classList.toggle('atual', n === i); b.classList.toggle('feito', n < i); });
+    $('#ant').disabled = i === 0; $('#seg').disabled = i === lista.length - 1;
+    document.dispatchEvent(new CustomEvent('etapa', {detail: i}));
+  }
+  $('#ant').onclick = () => ir(i - 1); $('#seg').onclick = () => ir(i + 1);
+  document.addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'ArrowRight') ir(i + 1); if (e.key === 'ArrowLeft') ir(i - 1); });
+  ir(0); return {ir, atual: () => i};
+})();
+
+/* ================= Glossário ================= */
+(() => {
+  const tip = $('#tooltip');
+  const mostrar = el => { tip.textContent = el.dataset.def; const r = el.getBoundingClientRect(); tip.classList.add('visivel');
+    const tw = tip.offsetWidth; tip.style.left = Math.max(8, Math.min(innerWidth - tw - 8, r.left + r.width / 2 - tw / 2)) + 'px';
+    tip.style.top = (r.top > tip.offsetHeight + 12 ? r.top - tip.offsetHeight - 8 : r.bottom + 8) + 'px'; };
+  const esconder = () => tip.classList.remove('visivel');
+  $$('.termo').forEach(el => { el.tabIndex = 0;
+    el.addEventListener('mouseenter', () => mostrar(el)); el.addEventListener('mouseleave', esconder);
+    el.addEventListener('focus', () => mostrar(el)); el.addEventListener('blur', esconder);
+    el.addEventListener('click', e => { e.stopPropagation(); tip.classList.contains('visivel') ? esconder() : mostrar(el); }); });
+  document.addEventListener('click', esconder); addEventListener('scroll', esconder, {passive: true});
+})();
+
+/* ================= Escolhas (Prevê primeiro e Quiz) ================= */
+function responder(bloco, certo, onCerto){
+  const fb = $('.feedback', bloco);
+  fb.textContent = certo ? fb.dataset.certo : fb.dataset.errado;
+  fb.className = 'feedback ' + (certo ? 'ok' : 'nao');
+  if (certo && onCerto) onCerto();
+}
+/* Prevê primeiro: qualquer palpite revela .apos-prever; mostra a opção certa. */
+$$('.preve').forEach(p => {
+  const depois = p.parentElement.querySelector('.apos-prever'); if (depois) depois.classList.add('escondido');
+  $$('.opcao', p).forEach(b => b.onclick = () => {
+    if (p.dataset.respondido) return; p.dataset.respondido = 1;
+    const certo = b.dataset.valor === p.dataset.certa;
+    $$('.opcao', p).forEach(o => { if (o.dataset.valor === p.dataset.certa) o.classList.add('certa'); else if (o === b) o.classList.add('errada'); });
+    responder(p, certo);
+    if (depois){ depois.classList.remove('escondido'); document.dispatchEvent(new Event('revelado')); }
+  });
+});
+/* Quiz: escolha (data-certa) ou manipulação (data-verificar → Quiz.verificadores[nome]()). */
+const Quiz = {verificadores: {}};
+(() => {
+  const desafios = $$('.quiz .desafio'), placar = $('.quiz .pontuacao'); const tentado = new Set();
+  const atualizar = () => { const ok = desafios.filter(d => d.classList.contains('resolvido')).length;
+    placar.textContent = ok === desafios.length ? `🎉 ${ok}/${desafios.length} — dominaste isto!` : `${ok}/${desafios.length} desafios resolvidos`; };
+  desafios.forEach(d => {
+    if (d.dataset.certa) $$('.opcao', d).forEach(b => b.onclick = () => {
+      if (d.classList.contains('resolvido')) return;
+      const certo = b.dataset.valor === d.dataset.certa; b.classList.add(certo ? 'certa' : 'errada');
+      responder(d, certo, () => d.classList.add('resolvido')); atualizar(); });
+    const v = $('.verificar', d);
+    if (v) v.onclick = () => { const certo = !!(Quiz.verificadores[d.dataset.verificar] || (() => false))();
+      responder(d, certo, () => d.classList.add('resolvido')); atualizar(); };
+  });
+  atualizar();
+})();
+
+/* ================= Visualizações (SUBSTITUI pelas tuas) ================= */
+/* Regra: cada visualização guarda o estado e redesenha tudo a partir dele. */
+(() => {
+  const svg = $('#v1'); let r = 60;
+  function desenhar(){
+    svg.replaceChildren();
+    svgEl('circle', {cx: 200, cy: 150, r, fill: 'var(--acento)', 'fill-opacity': .25, stroke: 'var(--acento)', 'stroke-width': 3}, svg);
+    svgEl('line', {x1: 200, y1: 150, x2: 200 + r, y2: 150, stroke: 'var(--a2)', 'stroke-width': 3}, svg);
+    const t = svgEl('text', {x: 200 + r / 2, y: 140, 'text-anchor': 'middle', fill: 'var(--a2)', 'font-size': 16, 'font-weight': 700}, svg); t.textContent = 'r';
+    const a = Math.PI * r * r, larg = a / (Math.PI * 140 * 140) * 220;
+    svgEl('rect', {x: 360, y: 130, width: 220, height: 40, rx: 6, fill: 'var(--linha)'}, svg);
+    svgEl('rect', {x: 360, y: 130, width: larg, height: 40, rx: 6, fill: 'var(--a3)'}, svg);
+    const l = svgEl('text', {x: 360, y: 115, fill: 'var(--texto)', 'font-size': 15}, svg); l.textContent = 'Área';
+    $('#f1').textContent = `A = π · r² = π · ${fmt(r, 0)}² ≈ ${fmt(a, 0)}`;
+  }
+  ligarSlider('r1', v => fmt(v, 0), v => { r = v; desenhar(); });
+})();
+
+(() => {
+  const svg = $('#v2'); let r = 40;
+  function desenhar(){
+    svg.replaceChildren();
+    svgEl('circle', {cx: 130, cy: 150, r, fill: 'var(--a4)', 'fill-opacity': .3, stroke: 'var(--a4)', 'stroke-width': 3}, svg);
+    svgEl('circle', {cx: 400, cy: 150, r: 2 * r, fill: 'var(--acento)', 'fill-opacity': .2, stroke: 'var(--acento)', 'stroke-width': 3}, svg);
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx,dy]) => svgEl('circle', {cx: 400 + dx * r * .7, cy: 150 + dy * r * .7, r: r * .62, fill: 'var(--a4)', 'fill-opacity': .35}, svg));
+    const t1 = svgEl('text', {x: 130, y: 285, 'text-anchor': 'middle', fill: 'var(--texto)', 'font-size': 15}, svg); t1.textContent = `r = ${fmt(r,0)}`;
+    const t2 = svgEl('text', {x: 400, y: 285, 'text-anchor': 'middle', fill: 'var(--texto)', 'font-size': 15}, svg); t2.textContent = `2r = ${fmt(2*r,0)} → 4× a área`;
+  }
+  ligarSlider('r2', v => fmt(v, 0), v => { r = v; desenhar(); });
+})();
+
+(() => {
+  let r = 20;
+  ligarSlider('rq', v => fmt(v, 0), v => { r = v; $('#fq').textContent = `A = π · ${fmt(r,0)}² ≈ ${fmt(Math.PI * r * r, 0)}`; });
+  Quiz.verificadores.area1000 = () => Math.abs(Math.PI * r * r - 10000) <= 500;
+})();
+</script>
+</body>
+</html>
