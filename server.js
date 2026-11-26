@@ -18,7 +18,7 @@ const DB_PATH = process.env.DB_PATH || path.join(ROOT, 'data', 'barbearia.db');
 const TZ = CONFIG.shop.timezone || 'Europe/Lisbon';
 const STATUSES = ['confirmada', 'concluida', 'cancelada', 'falta'];
 // Opening hours are derived from the booking start times (first start to last end) when "slots" is used.
-if (CONFIG.slots) {
+if (CONFIG.slots && !CONFIG.hours) {
   const dur = Math.max(...CONFIG.services.map((s) => s.minutes));
   CONFIG.hours = {};
   for (let d = 0; d < 7; d++) {
