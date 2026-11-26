@@ -30,6 +30,11 @@ function toast(msg) {
 
 let CFG;
 const state = { step: 0, service: null, barber: 'any', date: null, time: null };
+// Steps with a single choice (one service, one barber) are skipped.
+const skipped = new Set();
+const nextStep = (s) => { do s++; while (skipped.has(s)); return s; };
+const prevStep = (s) => { do s--; while (s > 0 && skipped.has(s)); return skipped.has(s) ? state.step : s; };
+const firstStep = () => (skipped.has(0) ? nextStep(0) : 0);
 
 // ---------- Static content ----------
 function renderShop() {
@@ -39,7 +44,6 @@ function renderShop() {
   $('#phoneLink').href = `tel:${s.phone.replace(/\s/g, '')}`;
   $('#emailLink').href = `mailto:${s.email}`;
   $('#privacyEmail').href = `mailto:${s.email}`;
-  $('#mapsLink').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}`;
   $('#waFloat').href = `https://wa.me/${s.whatsapp}`;
   if (!s.whatsapp) $('#waFloat').remove();
   $('#year').textContent = new Date().getFullYear();
@@ -67,7 +71,7 @@ function renderShop() {
     el('div', { class: 'top' }, el('h3', {}, sv.name), el('span', { class: 'price' }, eur(sv.price))),
     el('p', {}, sv.description),
     el('span', { class: 'chip' }, `⏱ ${sv.minutes} min`),
-    el('a', { href: '#marcar', class: 'btn btn-ghost btn-sm', onclick: () => selectService(sv.id, true) }, 'Marcar este')
+    el('a', { href: '#marcar', class: 'btn btn-ghost btn-sm', onclick: () => selectService(sv.id, true) }, CFG.services.length === 1 ? 'Marcar' : 'Marcar este')
   )));
 }
 
@@ -76,13 +80,13 @@ function selectService(id, jump) {
   state.service = CFG.services.find((s) => s.id === id);
   state.time = null;
   $$('#serviceOptions .option').forEach((o) => { const on = o.dataset.id === id; o.classList.toggle('selected', on); o.setAttribute('aria-checked', on); });
-  if (jump) goTo(1);
+  if (jump) goTo(nextStep(0));
   update();
 }
 function renderOptions() {
   $('#serviceOptions').append(...CFG.services.map((s) => el('button', {
     type: 'button', class: 'option', role: 'radio', 'aria-checked': 'false', 'data-id': s.id,
-    onclick: () => { selectService(s.id); setTimeout(() => goTo(1), 180); },
+    onclick: () => { selectService(s.id); setTimeout(() => goTo(nextStep(0)), 180); },
   }, el('strong', {}, s.name), el('small', {}, `${s.minutes} min · ${eur(s.price)}`))));
 
   const barbers = [{ id: 'any', name: 'Qualquer barbeiro', sub: 'Mais horários disponíveis' }, ...CFG.barbers.map((b) => ({ ...b, sub: 'Barbeiro' }))];
@@ -91,17 +95,28 @@ function renderOptions() {
     onclick: (e) => {
       state.barber = b.id; state.time = null;
       $$('#barberOptions .option').forEach((o) => { const on = o.dataset.id === b.id; o.classList.toggle('selected', on); o.setAttribute('aria-checked', on); });
-      update(); setTimeout(() => goTo(2), 180);
+      update(); setTimeout(() => goTo(nextStep(1)), 180);
     },
   }, el('strong', {}, b.name), el('small', {}, b.sub))));
 
+  if (CFG.services.length === 1) { skipped.add(0); state.service = CFG.services[0]; }
+  if (CFG.barbers.length === 1) { skipped.add(1); state.barber = CFG.barbers[0].id; }
+  $$('.progress span').forEach((sp, i) => { sp.hidden = skipped.has(i); });
+  let n = 1;
+  $$('.step-pane').forEach((pane) => {
+    const i = Number(pane.dataset.step), h = $('h3', pane);
+    if (i < 4 && h && !skipped.has(i)) h.textContent = h.textContent.replace(/^\d+\./, `${n++}.`);
+  });
+
   const days = [];
-  for (let i = 0; i <= CFG.booking.daysAhead; i++) {
-    const d = addDays(CFG.today, i);
+  const start = CFG.booking.startDate && CFG.booking.startDate > CFG.today ? CFG.booking.startDate : CFG.today;
+  const last = addDays(CFG.today, CFG.booking.daysAhead);
+  for (let i = 0; addDays(start, i) <= last; i++) {
+    const d = addDays(start, i);
     const closed = !(CFG.hours[wd(d)] || []).length || CFG.closedDates.includes(d);
     const x = new Date(d + 'T12:00:00Z');
     const btn = el('button', { type: 'button', class: 'day', role: 'radio', 'data-date': d, 'aria-label': fmtDate(d) + (closed ? ' (fechado)' : ''), onclick: () => pickDate(d) },
-      el('small', {}, i === 0 ? 'Hoje' : DAYS_SHORT[x.getUTCDay()]), el('b', {}, String(x.getUTCDate())), el('small', {}, MONTHS[x.getUTCMonth()]));
+      el('small', {}, d === CFG.today ? 'Hoje' : DAYS_SHORT[x.getUTCDay()]), el('b', {}, String(x.getUTCDate())), el('small', {}, MONTHS[x.getUTCMonth()]));
     if (closed) btn.disabled = true;
     days.push(btn);
   }
@@ -137,7 +152,7 @@ function goTo(step) {
   $$('.step-pane').forEach((p) => p.classList.toggle('active', Number(p.dataset.step) === step));
   $$('.progress span').forEach((s, i) => s.classList.toggle('on', i <= step));
   $('#wizardNav').style.display = step === 4 ? 'none' : 'flex';
-  $('#backBtn').style.visibility = step === 0 ? 'hidden' : 'visible';
+  $('#backBtn').style.visibility = step === firstStep() ? 'hidden' : 'visible';
   $('#nextBtn').textContent = step === 3 ? 'Confirmar marcação' : 'Continuar';
   hideError();
   if (step === 2) {
@@ -157,7 +172,7 @@ function canContinue() {
 function update() {
   const s = state.service;
   $('#sumService').textContent = s ? s.name : '—';
-  $('#sumBarber').textContent = state.barber === 'any' ? 'Qualquer barbeiro' : CFG.barbers.find((b) => b.id === state.barber).name;
+  $('#sumBarber').textContent = state.barber === 'any' ? 'Qualquer barbeiro' : (CFG.barbers.find((b) => b.id === state.barber) || {}).name || '—';
   $('#sumWhen').textContent = state.date ? `${fmtDate(state.date)}${state.time ? ' às ' + state.time : ''}` : '—';
   $('#sumDuration').textContent = s ? `${s.minutes} min` : '—';
   $('#sumPrice').textContent = s ? eur(s.price) : '—';
@@ -223,9 +238,9 @@ function initUi() {
     if (e.target.closest('[data-close]')) e.target.closest('dialog').close();
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
-  $('#backBtn').addEventListener('click', () => goTo(Math.max(0, state.step - 1)));
-  $('#nextBtn').addEventListener('click', () => (state.step === 3 ? submitBooking() : goTo(state.step + 1)));
-  $('#newBooking').addEventListener('click', () => { Object.assign(state, { time: null }); goTo(0); });
+  $('#backBtn').addEventListener('click', () => goTo(prevStep(state.step)));
+  $('#nextBtn').addEventListener('click', () => (state.step === 3 ? submitBooking() : goTo(nextStep(state.step))));
+  $('#newBooking').addEventListener('click', () => { Object.assign(state, { time: null }); goTo(firstStep()); });
   $('#lookupForm').addEventListener('submit', lookup);
   const io = new IntersectionObserver((es) => es.forEach((x) => x.isIntersecting && (x.target.classList.add('in'), io.unobserve(x.target))), { threshold: .12 });
   $$('.reveal').forEach((n) => io.observe(n));
@@ -237,7 +252,7 @@ function initUi() {
     renderShop();
     renderOptions();
     initUi();
-    goTo(0);
+    goTo(firstStep());
   } catch (e) {
     document.body.prepend(el('div', { class: 'alert error show', style: 'margin:16px' }, 'Não foi possível carregar o site. Tente recarregar a página.'));
   }

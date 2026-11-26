@@ -102,6 +102,7 @@ section.alt { background: var(--bg-2); border-block: 1px solid var(--line); }
 /* Booking wizard */
 .booking { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
 @media (max-width: 900px) { .booking { grid-template-columns: 1fr; } }
+.booking > * { min-width: 0; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: clamp(18px, 3vw, 28px); }
 .progress { display: flex; gap: 6px; margin-bottom: 22px; }
 .progress span { flex: 1; height: 4px; border-radius: 4px; background: var(--line); transition: background .3s; }

@@ -20,12 +20,12 @@ Para ver o dashboard com dados de exemplo: `npm run seed` (não usar em produç�
 Tudo o que é da barbearia está em `config.json`:
 
 - `shop`: nome, frase, morada, telefone, WhatsApp (só dígitos com indicativo), email, NIF.
-- `hours`: horário por dia da semana (`0` = domingo). Lista vazia = fechado.
+- `slots`: horas de início das marcações por dia da semana (`0` = domingo). Lista vazia = fechado. O horário mostrado no site é calculado a partir daqui.
 - `closedDates`: feriados e folgas (`AAAA-MM-DD`).
 - `barbers`: lista de barbeiros. Em `phone` ponha o telemóvel de cada um para receberem as mensagens.
 - `notifications`: `reminderHoursBefore` (horas antes do lembrete, 24 por omissão) e `barberPhone` (número geral, usado se o barbeiro não tiver telemóvel).
 - `services`: serviços, duração em minutos e preço.
-- `booking`: intervalo entre horários, quantos dias à frente se pode marcar e antecedência mínima.
+- `booking`: `startDate` (primeiro dia com marcações), quantos dias à frente se pode marcar e antecedência mínima.
 
 Reinicie o servidor depois de alterar o ficheiro.
 

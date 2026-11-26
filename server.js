@@ -17,6 +17,17 @@ const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('he
 const DB_PATH = process.env.DB_PATH || path.join(ROOT, 'data', 'barbearia.db');
 const TZ = CONFIG.shop.timezone || 'Europe/Lisbon';
 const STATUSES = ['confirmada', 'concluida', 'cancelada', 'falta'];
+// Opening hours are derived from the booking start times (first start to last end) when "slots" is used.
+if (CONFIG.slots) {
+  const dur = Math.max(...CONFIG.services.map((s) => s.minutes));
+  CONFIG.hours = {};
+  for (let d = 0; d < 7; d++) {
+    const list = CONFIG.slots[String(d)] || [];
+    CONFIG.hours[d] = list.length ? [[list[0], minToHHMM(hhmmToMin(list[list.length - 1]) + dur)]] : [];
+  }
+}
+function hhmmToMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+function minToHHMM(m) { return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 
 if (!process.env.ADMIN_PASSWORD) {
@@ -86,6 +97,7 @@ function freeSlots(date, service, barberId) {
   const now = nowInShop();
   const last = addDays(now.date, CONFIG.booking.daysAhead);
   if (!isValidDate(date) || date < now.date || date > last) return [];
+  if (CONFIG.booking.startDate && date < CONFIG.booking.startDate) return [];
   if ((CONFIG.closedDates || []).includes(date)) return [];
   const ranges = CONFIG.hours[String(weekday(date))] || [];
   const step = CONFIG.booking.slotMinutes;
@@ -93,8 +105,11 @@ function freeSlots(date, service, barberId) {
   const busy = Object.fromEntries(barbers.map((b) => [b.id, busyFor(date, b.id)]));
   const earliest = date === now.date ? now.minutes + (CONFIG.booking.minNoticeMinutes || 0) : -1;
   const slots = [];
-  for (const [open, close] of ranges) {
-    for (let s = toMin(open); s + service.minutes <= toMin(close); s += step) {
+  const starts = [];
+  if (CONFIG.slots) (CONFIG.slots[String(weekday(date))] || []).forEach((t) => starts.push(toMin(t)));
+  else for (const [open, close] of ranges) for (let s = toMin(open); s + service.minutes <= toMin(close); s += step) starts.push(s);
+  {
+    for (const s of starts) {
       if (s < earliest) continue;
       const e = s + service.minutes;
       const free = barbers.filter((b) => !busy[b.id].some((x) => s < x.end_min && e > x.start_min)).map((b) => b.id);
