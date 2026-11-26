@@ -83,6 +83,18 @@ input[type=range]{width:100%;accent-color:var(--acento);height:32px}
 .desafio .q{font-weight:600;margin:0 0 10px}
 .desafio.resolvido{border-color:var(--certo)}
 .pontuacao{font-size:1.2rem;font-weight:700;text-align:center;margin:16px 0 0}
+
+/* ===== Painel de informação (ex.: parte clicada de um diagrama) ===== */
+.painel{border-left:4px solid var(--acento);background:var(--fundo);border-radius:0 10px 10px 0;padding:10px 14px;margin-top:12px;min-height:3.2em}
+.painel h3{margin:0 0 2px;font-size:1.05rem}
+.painel p{margin:0;font-size:.95rem}
+.painel .curioso{color:var(--suave);margin-top:4px}
+/* Texto em SVG legível sobre diagramas carregados: class="halo" */
+svg .halo{paint-order:stroke;stroke:var(--fundo);stroke-width:4px;stroke-linejoin:round}
+svg text{font-family:inherit}
+@media (max-width:520px){
+  .etapa{padding:14px}
+}
 </style>
 </head>
 <body>
@@ -170,7 +182,7 @@ input[type=range]{width:100%;accent-color:var(--acento);height:32px}
 <div class="tooltip" id="tooltip" role="tooltip"></div>
 
 <script>
-/* ================= Utilitários (não alterar) ================= */
+/* ================= UTILITÁRIOS: copiar tal como está, não alterar ================= */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const cor = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -221,17 +233,21 @@ const Etapas = (() => {
 })();
 
 /* ================= Glossário ================= */
+/* Delegação de eventos: funciona também com .termo criados depois (painéis dinâmicos). */
 (() => {
-  const tip = $('#tooltip');
-  const mostrar = el => { tip.textContent = el.dataset.def; const r = el.getBoundingClientRect(); tip.classList.add('visivel');
+  const tip = $('#tooltip'); let atual = null;
+  const mostrar = el => { atual = el; tip.textContent = el.dataset.def; const r = el.getBoundingClientRect(); tip.classList.add('visivel');
     const tw = tip.offsetWidth; tip.style.left = Math.max(8, Math.min(innerWidth - tw - 8, r.left + r.width / 2 - tw / 2)) + 'px';
     tip.style.top = (r.top > tip.offsetHeight + 12 ? r.top - tip.offsetHeight - 8 : r.bottom + 8) + 'px'; };
-  const esconder = () => tip.classList.remove('visivel');
-  $$('.termo').forEach(el => { el.tabIndex = 0;
-    el.addEventListener('mouseenter', () => mostrar(el)); el.addEventListener('mouseleave', esconder);
-    el.addEventListener('focus', () => mostrar(el)); el.addEventListener('blur', esconder);
-    el.addEventListener('click', e => { e.stopPropagation(); tip.classList.contains('visivel') ? esconder() : mostrar(el); }); });
-  document.addEventListener('click', esconder); addEventListener('scroll', esconder, {passive: true});
+  const esconder = () => { atual = null; tip.classList.remove('visivel'); };
+  const termo = e => e.target.closest && e.target.closest('.termo[data-def]');
+  document.addEventListener('mouseover', e => { const t = termo(e); if (t && t !== atual) mostrar(t); else if (!t && atual) esconder(); });
+  document.addEventListener('focusin', e => { const t = termo(e); if (t) mostrar(t); });
+  document.addEventListener('focusout', e => { if (termo(e)) esconder(); });
+  document.addEventListener('click', e => { const t = termo(e); if (t && t !== atual) mostrar(t); else esconder(); });
+  new MutationObserver(() => $$('.termo:not([tabindex])').forEach(el => el.tabIndex = 0)).observe(document.body, {childList: true, subtree: true});
+  $$('.termo').forEach(el => el.tabIndex = 0);
+  addEventListener('scroll', esconder, {passive: true});
 })();
 
 /* ================= Escolhas (Prevê primeiro e Quiz) ================= */
@@ -270,7 +286,13 @@ const Quiz = {verificadores: {}};
   atualizar();
 })();
 
-/* ================= Visualizações (SUBSTITUI pelas tuas) ================= */
+/* ================= FIM DOS UTILITÁRIOS ================= */
+</script>
+
+<script>
+/* ================= Visualizações e conteúdo da lição (SUBSTITUI este script inteiro) ================= */
+/* Disponível do script anterior: $, $$, cor('--acento') (hex para canvas), fmt, ligarSlider, svgEl,
+   initCanvas, arrastar, Etapas.ir(n), evento 'etapa' (detail = índice), evento 'revelado', Quiz.verificadores. */
 /* Regra: cada visualização guarda o estado e redesenha tudo a partir dele. */
 (() => {
   const svg = $('#v1'); let r = 60;
@@ -278,11 +300,11 @@ const Quiz = {verificadores: {}};
     svg.replaceChildren();
     svgEl('circle', {cx: 200, cy: 150, r, fill: 'var(--acento)', 'fill-opacity': .25, stroke: 'var(--acento)', 'stroke-width': 3}, svg);
     svgEl('line', {x1: 200, y1: 150, x2: 200 + r, y2: 150, stroke: 'var(--a2)', 'stroke-width': 3}, svg);
-    const t = svgEl('text', {x: 200 + r / 2, y: 140, 'text-anchor': 'middle', fill: 'var(--a2)', 'font-size': 16, 'font-weight': 700}, svg); t.textContent = 'r';
+    const t = svgEl('text', {x: 200 + r / 2, y: 140, 'text-anchor': 'middle', fill: 'var(--a2)', 'font-size': 24, 'font-weight': 700, class: 'halo'}, svg); t.textContent = 'r';
     const a = Math.PI * r * r, larg = a / (Math.PI * 140 * 140) * 220;
     svgEl('rect', {x: 360, y: 130, width: 220, height: 40, rx: 6, fill: 'var(--linha)'}, svg);
     svgEl('rect', {x: 360, y: 130, width: larg, height: 40, rx: 6, fill: 'var(--a3)'}, svg);
-    const l = svgEl('text', {x: 360, y: 115, fill: 'var(--texto)', 'font-size': 15}, svg); l.textContent = 'Área';
+    const l = svgEl('text', {x: 360, y: 115, fill: 'var(--texto)', 'font-size': 24}, svg); l.textContent = 'Área';
     $('#f1').textContent = `A = π · r² = π · ${fmt(r, 0)}² ≈ ${fmt(a, 0)}`;
   }
   ligarSlider('r1', v => fmt(v, 0), v => { r = v; desenhar(); });
@@ -295,8 +317,8 @@ const Quiz = {verificadores: {}};
     svgEl('circle', {cx: 130, cy: 150, r, fill: 'var(--a4)', 'fill-opacity': .3, stroke: 'var(--a4)', 'stroke-width': 3}, svg);
     svgEl('circle', {cx: 400, cy: 150, r: 2 * r, fill: 'var(--acento)', 'fill-opacity': .2, stroke: 'var(--acento)', 'stroke-width': 3}, svg);
     [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx,dy]) => svgEl('circle', {cx: 400 + dx * r * .7, cy: 150 + dy * r * .7, r: r * .62, fill: 'var(--a4)', 'fill-opacity': .35}, svg));
-    const t1 = svgEl('text', {x: 130, y: 285, 'text-anchor': 'middle', fill: 'var(--texto)', 'font-size': 15}, svg); t1.textContent = `r = ${fmt(r,0)}`;
-    const t2 = svgEl('text', {x: 400, y: 285, 'text-anchor': 'middle', fill: 'var(--texto)', 'font-size': 15}, svg); t2.textContent = `2r = ${fmt(2*r,0)} → 4× a área`;
+    const t1 = svgEl('text', {x: 130, y: 285, 'text-anchor': 'middle', fill: 'var(--texto)', 'font-size': 24}, svg); t1.textContent = `r = ${fmt(r,0)}`;
+    const t2 = svgEl('text', {x: 400, y: 285, 'text-anchor': 'middle', fill: 'var(--texto)', 'font-size': 24}, svg); t2.textContent = `2r = ${fmt(2*r,0)} → 4× a área`;
   }
   ligarSlider('r2', v => fmt(v, 0), v => { r = v; desenhar(); });
 })();

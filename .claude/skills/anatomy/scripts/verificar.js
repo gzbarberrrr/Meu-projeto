@@ -3,7 +3,13 @@
 // navegação por etapas, quiz, largura mobile e modo escuro.
 // Uso: node verificar.js <ficheiro.html> [captura.png]
 const path = require('path');
-const { chromium } = require('playwright');
+// Encontra o Playwright local ou o global (npm root -g) sem precisar de NODE_PATH.
+function carregarPlaywright() {
+  try { return require('playwright'); } catch (_) {}
+  const raiz = require('child_process').execSync('npm root -g').toString().trim();
+  return require(path.join(raiz, 'playwright'));
+}
+const { chromium } = carregarPlaywright();
 
 (async () => {
   const ficheiro = process.argv[2];
@@ -41,26 +47,48 @@ const { chromium } = require('playwright');
     const preve = await page.$(`.etapa.ativa .preve .opcao`);
     if (preve) { await preve.click(); await page.waitForTimeout(100); }
     const sliders = await page.$$('.etapa.ativa input[type=range]');
+    // Estado visual da etapa, sem os <output> dos sliders (esses mudam sempre).
+    const estado = () => page.evaluate(() => {
+      const e = document.querySelector('.etapa.ativa').cloneNode(true);
+      e.querySelectorAll('.controlo output').forEach(o => o.remove());
+      return e.innerHTML + [...document.querySelectorAll('.etapa.ativa canvas')].map(c => c.toDataURL()).join('');
+    });
+    // Se a etapa muda sozinha (animação), a comparação não prova nada: avisa em vez de passar.
+    const a1 = await estado(); await page.waitForTimeout(150); const a2 = await estado();
+    const anima = a1 !== a2;
     for (const s of sliders) {
       if (!(await s.isVisible())) continue;
-      const antes = await page.evaluate(() => document.querySelector('.etapa.ativa').innerHTML + [...document.querySelectorAll('.etapa.ativa canvas')].map(c => c.toDataURL()).join(''));
+      const id = await s.getAttribute('id');
+      slidersTestados++;
+      if (anima) { avisos.push(`Etapa ${i + 1} está animada: confirma na captura que o slider #${id} muda a visualização.`); continue; }
+      const antes = await estado();
       await s.evaluate(el => { el.value = +el.min + (+el.max - +el.min) * 0.83; el.dispatchEvent(new Event('input', { bubbles: true })); });
       await page.waitForTimeout(120);
-      const depois = await page.evaluate(() => document.querySelector('.etapa.ativa').innerHTML + [...document.querySelectorAll('.etapa.ativa canvas')].map(c => c.toDataURL()).join(''));
-      slidersTestados++;
-      if (antes === depois) { slidersMortos++; falhas.push(`Slider #${await s.getAttribute('id')} na etapa ${i + 1} não altera nada visível.`); }
+      if (antes === await estado()) { slidersMortos++; falhas.push(`Slider #${id} na etapa ${i + 1} só muda o número, não a visualização.`); }
     }
   }
   // quiz: clica na primeira opção de cada desafio de escolha e verifica feedback
   await page.evaluate(n => Etapas.ir(n - 1), nEtapas);
   const desafios = await page.$$('.quiz .desafio');
-  for (const d of desafios) {
-    const op = await d.$('.opcao') || await d.$('.verificar');
-    if (!op) continue;
-    if (!(await op.isVisible())) { const idx = await d.evaluate(el => [...document.querySelectorAll('.etapa')].indexOf(el.closest('.etapa'))); await page.evaluate(k => Etapas.ir(k), idx); }
-    await op.click();
+  for (const [n, d] of desafios.entries()) {
+    const idx = await d.evaluate(el => [...document.querySelectorAll('.etapa')].indexOf(el.closest('.etapa')));
+    await page.evaluate(k => Etapas.ir(k), idx);
+    const certa = await d.getAttribute('data-certa');
+    if (certa) {
+      // escolha múltipla: a opção certa tem de existir e ser aceite
+      const op = await d.$(`.opcao[data-valor="${certa}"]`);
+      if (!op) { falhas.push(`Desafio ${n + 1}: nenhuma opção com data-valor="${certa}".`); continue; }
+      await op.click();
+      if (!(await d.evaluate(el => el.classList.contains('resolvido')))) falhas.push(`Desafio ${n + 1}: a resposta certa não é aceite.`);
+    } else {
+      const nome = await d.getAttribute('data-verificar');
+      const existe = await page.evaluate(k => typeof (Quiz.verificadores || {})[k] === 'function', nome);
+      if (!existe) falhas.push(`Desafio ${n + 1}: falta Quiz.verificadores.${nome}.`);
+      const v = await d.$('.verificar');
+      if (v) await v.click(); else falhas.push(`Desafio ${n + 1}: falta o botão .verificar.`);
+    }
     const txt = await d.$eval('.feedback', f => f.textContent.trim()).catch(() => '');
-    if (!txt) falhas.push('Um desafio do quiz não dá feedback ao responder.');
+    if (!txt) falhas.push(`Desafio ${n + 1} não dá feedback ao responder.`);
   }
   if (erros.length) falhas.push('Erros na consola: ' + [...new Set(erros)].join(' | '));
   await ctx.close();

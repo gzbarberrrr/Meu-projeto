@@ -76,8 +76,17 @@ Usa os componentes que já estão no modelo. Todos os quatro extras entram em ca
 
 - Copia `assets/modelo.html` para o scratchpad e preenche-o. O modelo já tem os tokens de
   cor (tema claro e escuro), layout responsivo, navegação por etapas, componente de previsão,
-  quiz, tooltips do glossário e um helper de canvas com suporte a ecrãs retina. Não reescrevas
-  estas peças; acrescenta o conteúdo e as visualizações.
+  quiz, tooltips do glossário, um `.painel` para mostrar nome/função/curiosidade de uma parte
+  clicada, e um helper de canvas com suporte a ecrãs retina. Não reescrevas estas peças.
+  O modelo traz uma mini-lição de exemplo (área do círculo) que deves substituir. Só mexes
+  em três sítios: o `<header>`, as `<section class="etapa">` dentro de `<main>`, e o **segundo**
+  `<script>` (visualizações). O primeiro `<script>` (utilitários) copia-se tal como está.
+- **Cores dentro de SVG e canvas**: em atributos SVG podes usar `fill="var(--a2)"` diretamente.
+  Em canvas, ou quando precisas de misturar cores, lê o valor com `cor('--a2')`. Não uses cores
+  fixas, senão o modo escuro parte.
+- Termos do glossário (`.termo[data-def]`) funcionam também em texto gerado por JS.
+- Nos botões, escreve "Pausa" / "Play" em texto, não só com emoji: alguns ícones (⏸) não
+  aparecem em todos os sistemas.
 - **Ficheiro único**: HTML, CSS e JS inline. Vanilla JS com SVG ou Canvas chega para quase
   tudo. Bibliotecas só se poupam muito trabalho e apenas de CDNs permitidos com versão exata
   (ex.: `https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js` para 3D a sério,
@@ -90,9 +99,11 @@ Usa os componentes que já estão no modelo. Todos os quatro extras entram em ca
 - **Respostas imediatas**: tudo reage com `input`, não com `change`, para o gráfico seguir o
   dedo. Animações com `requestAnimationFrame`, com botão de pausa.
 - **Mobile**: alvos de toque com pelo menos 40 px, sem scroll horizontal, gráficos que
-  encolhem com o ecrã (viewBox no SVG, largura do contentor no canvas). Num SVG com viewBox
-  de 600 de largura, o texto encolhe para ~60% num telemóvel: usa `font-size` de 18 ou mais
-  para etiquetas que têm de ser lidas. Suporta pointer events
+  encolhem com o ecrã (viewBox no SVG, largura do contentor no canvas). Num telemóvel de
+  375 px, um SVG com viewBox de 600 de largura fica com ~320 px, ou seja, o texto encolhe
+  para metade. Para etiquetas que têm de ser lidas, usa `font-size` de 24 ou mais nesse
+  viewBox, ou abrevia-as em ecrãs estreitos (`matchMedia('(max-width:520px)')`). Usa a classe
+  `halo` em texto por cima de diagramas carregados. Suporta pointer events
   para que arrastar funcione com rato e com dedo.
 - **Cores**: usa só as variáveis CSS do modelo (`--acento`, `--a2`, `--a3`...), para a página
   funcionar em modo claro e escuro. Usa a cor com significado consistente: se o vermelho é
@@ -102,7 +113,8 @@ Usa os componentes que já estão no modelo. Todos os quatro extras entram em ca
 
 ## Publicar
 
-Se a ferramenta Artifact está disponível, segue as regras dela: faz `quickstart` com
+Se o utilizador pedir só o ficheiro, ou disser para não publicar, guarda o HTML e salta este
+passo. Caso contrário, se a ferramenta Artifact está disponível, segue as regras dela: faz `quickstart` com
 `intent: "other"` uma vez por lição nova, escreve o ficheiro no scratchpad, e publica com um
 `<title>` de 2 a 4 palavras (ex.: "Anatomia do Coração"), um `description` de uma frase e
 `icon: "learn"` (ou outra palavra genérica que sirva, ex.: "heart", "atom"). Para alterações
@@ -121,9 +133,12 @@ Antes de publicar, abre a página no Playwright (Chromium já está instalado) e
 - a 375 px de largura não há scroll horizontal (`document.documentElement.scrollWidth <= 375`);
 - em `prefers-color-scheme: dark` o texto continua legível.
 
-`scripts/verificar.js` faz estas verificações: `node scripts/verificar.js <ficheiro.html>`.
-Corrige o que falhar antes de publicar. Tira uma captura só para ti (deviceScaleFactor 1) e
-olha para ela: sobreposições, texto cortado e gráficos vazios não se apanham só com código.
+`scripts/verificar.js` (na pasta desta skill) faz estas verificações e encontra o Playwright
+sozinho: `node <pasta-da-skill>/scripts/verificar.js <licao.html> <captura.png>`. O segundo
+argumento guarda uma captura a 375 px em modo escuro. Corrige todas as linhas `FALHA` antes
+de publicar. Os `AVISO` de etapas animadas querem dizer que o script não consegue provar que
+o slider funciona: confirma-o tu. Depois olha para a captura (Read): sobreposições, texto
+minúsculo e gráficos vazios não se apanham só com código.
 
 ## Erros a evitar
 
