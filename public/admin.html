@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Dashboard | Barbearia</title>
+  <title>Dashboard | GZBarber</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+  <link rel="icon" href="/img/icon.png">
   <style>
     body { background: #0c0c0d; }
     .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
@@ -28,7 +28,7 @@
     .chart text { fill: var(--muted); font-size: 11px; font-family: var(--font); }
     .chart .bar { fill: var(--accent); opacity: .85; transition: opacity .15s; }
     .chart .bar:hover { opacity: 1; }
-    .chart .bar.today { fill: #f0c271; }
+    .chart .bar.today { fill: #ffffff; }
     .tip { position: fixed; pointer-events: none; background: #000; border: 1px solid var(--line); padding: 6px 10px; border-radius: 8px; font-size: .85rem; display: none; z-index: 200; }
     .agenda { display: grid; gap: 8px; max-height: 340px; overflow: auto; }
     .agenda-item { display: grid; grid-template-columns: 58px 1fr auto; gap: 12px; align-items: center; background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px; }
@@ -64,12 +64,21 @@
     .tabs { display: flex; gap: 6px; }
     .tabs button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 4px 12px; cursor: pointer; font: 600 .8rem var(--font); }
     .tabs button.on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+    .msgs { display: grid; gap: 8px; max-height: 380px; overflow: auto; }
+    .msg { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .9rem; }
+    .msg p { margin: 2px 0 0; color: var(--muted); overflow-wrap: anywhere; }
+    .msg .tag { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+    .tag.enviada { background: rgba(76, 195, 138, .14); color: var(--ok); }
+    .tag.manual { background: rgba(231, 184, 74, .14); color: var(--warn); }
+    .tag.falhou { background: rgba(239, 107, 107, .14); color: var(--bad); }
+    .btn-wa { background: #25d366; color: #fff; border-radius: 999px; padding: 5px 12px; font-size: .82rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    @media (max-width: 600px) { .msg { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="login" id="loginView" hidden>
     <form class="panel" id="loginForm">
-      <p class="eyebrow">Área do barbeiro</p>
+      <img src="/img/logo.webp" alt="GZBarber" width="740" height="620" style="width:180px;height:auto;margin:0 auto 8px"><p class="eyebrow">Área do barbeiro</p>
       <h2 style="font-size:1.8rem">Entrar no dashboard</h2>
       <label for="pw">Palavra-passe</label>
       <input id="pw" type="password" autocomplete="current-password" required>
@@ -83,7 +92,7 @@
     <header class="site-header">
       <div class="container" style="height:auto">
         <div class="topbar" style="width:100%">
-          <a href="/" class="logo">💈 <span id="shopName">Barbearia</span> <span class="muted" style="font:500 .9rem var(--font)">Dashboard</span></a>
+          <a href="/" class="logo"><img src="/img/mark.webp" alt="" width="34" height="36"><span id="shopName">GZBARBER</span> <small class="muted" style="font:500 .9rem var(--font);letter-spacing:0">Dashboard</small></a>
           <div class="actions">
             <span class="live" id="liveLabel">Ao vivo</span>
             <button class="btn btn-primary btn-sm" id="newBtn">+ Nova marcação</button>
@@ -118,6 +127,12 @@
           <div class="bars-list" id="byBarber"></div>
         </section>
       </div>
+
+      <section class="panel" style="margin-bottom:16px">
+        <h3>Mensagens enviadas <span class="muted" style="font-weight:500;font-size:.85rem" id="channelsLabel"></span></h3>
+        <p class="muted" style="font-size:.88rem;margin-top:-6px">Confirmação ao cliente e aviso ao barbeiro quando há uma marcação; lembrete aos dois 1 dia antes. Mensagens sem envio automático ficam aqui com botão de WhatsApp.</p>
+        <div class="msgs" id="msgs"></div>
+      </section>
 
       <section class="panel">
         <h3>Todas as marcações <span class="muted" style="font-weight:500;font-size:.85rem" id="countLabel"></span></h3>

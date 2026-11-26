@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
+const { createNotifier } = require('./notifier');
 
 const ROOT = __dirname;
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8'));
@@ -16,6 +17,7 @@ const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('he
 const DB_PATH = process.env.DB_PATH || path.join(ROOT, 'data', 'barbearia.db');
 const TZ = CONFIG.shop.timezone || 'Europe/Lisbon';
 const STATUSES = ['confirmada', 'concluida', 'cancelada', 'falta'];
+const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 
 if (!process.env.ADMIN_PASSWORD) {
   console.warn('[aviso] ADMIN_PASSWORD não definida: a usar "admin123". Defina uma palavra-passe antes de publicar.');
@@ -66,7 +68,12 @@ function addDays(dateStr, n) {
   return d.toISOString().slice(0, 10);
 }
 const weekday = (dateStr) => new Date(dateStr + 'T12:00:00Z').getUTCDay();
+const DAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const MONTH_NAMES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const fmtDate = (d) => { const x = new Date(d + 'T12:00:00Z'); return `${DAY_NAMES[x.getUTCDay()]}, ${x.getUTCDate()} ${MONTH_NAMES[x.getUTCMonth()]}`; };
 const isValidDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s + 'T12:00:00Z'));
+
+const notifier = createNotifier({ db, config: CONFIG, publicUrl: PUBLIC_URL, fmtDate, toHHMM });
 
 // ---------- Availability ----------
 function busyFor(date, barberId) {
@@ -158,7 +165,7 @@ function publicBooking(b) {
   return { code: b.code, name: b.name, service: b.service_name, barber: b.barber_name, date: b.date, time: toHHMM(b.start_min), end: toHHMM(b.end_min), price: b.price, status: b.status };
 }
 function adminBooking(b) {
-  return { ...publicBooking(b), id: b.id, phone: b.phone, email: b.email, notes: b.notes, service_id: b.service_id, barber_id: b.barber_id, source: b.source, created_at: b.created_at };
+  return { ...publicBooking(b), id: b.id, reminder_sent_at: b.reminder_sent_at, phone: b.phone, email: b.email, notes: b.notes, service_id: b.service_id, barber_id: b.barber_id, source: b.source, created_at: b.created_at };
 }
 
 // ---------- Booking creation ----------
@@ -188,7 +195,10 @@ function createBooking(input, source) {
       input.date, start, start + service.minutes, service.price, source
     );
     db.exec('COMMIT');
-    return { status: 201, booking: db.prepare('SELECT * FROM bookings WHERE code = ?').get(code) };
+    const booking = db.prepare('SELECT * FROM bookings WHERE code = ?').get(code);
+    notifier.markReminderIfClose(booking, nowInShop());
+    notifier.bookingCreated(booking).catch((e) => console.error('[mensagem]', e));
+    return { status: 201, booking };
   } catch (e) {
     db.exec('ROLLBACK');
     throw e;
@@ -243,7 +253,8 @@ async function handle(req, res) {
 
   // Public API
   if (m === 'GET' && p === '/api/config') {
-    const { shop, hours, barbers, services, booking, closedDates } = CONFIG;
+    const { shop, hours, services, booking, closedDates } = CONFIG;
+    const barbers = CONFIG.barbers.map(({ id, name }) => ({ id, name }));
     return send(res, 200, { shop, hours, barbers, services, booking, closedDates, today: nowInShop().date });
   }
   if (m === 'GET' && p === '/api/availability') {
@@ -268,6 +279,7 @@ async function handle(req, res) {
     if (!b) return send(res, 404, { error: 'Marcação não encontrada.' });
     if (b.status !== 'confirmada') return send(res, 400, { error: 'Esta marcação já não pode ser cancelada.' });
     db.prepare("UPDATE bookings SET status = 'cancelada' WHERE id = ?").run(b.id);
+    notifier.bookingCancelledByClient(b).catch((e) => console.error('[mensagem]', e));
     return send(res, 200, { booking: publicBooking({ ...b, status: 'cancelada' }) });
   }
 
@@ -292,6 +304,15 @@ async function handle(req, res) {
   // Admin API
   if (m === 'GET' && p === '/api/admin/me') return send(res, 200, { ok: true });
   if (m === 'GET' && p === '/api/admin/stats') return send(res, 200, stats());
+  if (m === 'GET' && p === '/api/admin/notifications') return send(res, 200, { channels: notifier.channels, items: notifier.list(60) });
+  const remindMatch = p.match(/^\/api\/admin\/bookings\/(\d+)\/remind$/);
+  if (remindMatch && m === 'POST') {
+    const b = db.prepare('SELECT * FROM bookings WHERE id = ?').get(Number(remindMatch[1]));
+    if (!b) return send(res, 404, { error: 'Não encontrada.' });
+    db.prepare("UPDATE bookings SET reminder_sent_at = datetime('now') WHERE id = ?").run(b.id);
+    await notifier.sendReminder(b);
+    return send(res, 200, { ok: true });
+  }
   if (m === 'GET' && p === '/api/admin/bookings') {
     const where = [], params = [];
     const from = url.searchParams.get('from'), to = url.searchParams.get('to');
@@ -338,6 +359,9 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
+  notifier.startScheduler(nowInShop, addDays);
+  const c = notifier.channels;
+  console.log(`Mensagens: SMS/WhatsApp ${c.sms ? 'ativo (' + c.twilioKind + ')' : 'não configurado'} · Telegram ${c.telegram ? 'ativo' : 'não configurado'} · Email ${c.email ? 'ativo' : 'não configurado'}`);
   server.listen(PORT, () => {
     console.log(`Site:      http://localhost:${PORT}`);
     console.log(`Dashboard: http://localhost:${PORT}/admin`);

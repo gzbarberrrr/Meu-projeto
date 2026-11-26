@@ -34,7 +34,6 @@ function showLogin() { clearInterval(timer); $('#appView').hidden = true; $('#lo
 async function showApp() {
   $('#loginView').hidden = true; $('#appView').hidden = false;
   CFG = CFG || await api('/api/config');
-  $('#shopName').textContent = CFG.shop.name;
   setupNewForm();
   if (!$('#ffrom').dataset.init) { $('#ffrom').value = CFG.today; $('#ffrom').dataset.init = '1'; }
   await refresh();
@@ -111,6 +110,7 @@ const ICONS = {
   noshow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg>',
   cancel: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   undo: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>',
+  bell: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>',
   del: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
 };
 function iconBtn(icon, label, fn) {
@@ -121,6 +121,7 @@ function iconBtn(icon, label, fn) {
 function actionsFor(b) {
   const box = el('div', { class: 'row-actions' });
   if (b.status === 'confirmada') {
+    box.append(iconBtn('bell', 'Enviar lembrete agora', async () => { await api(`/api/admin/bookings/${b.id}/remind`, { method: 'POST' }); toast(`Lembrete enviado para ${b.name}.`); refresh(); }));
     box.append(iconBtn('done', 'Marcar como concluída', () => setStatus(b, 'concluida')), iconBtn('noshow', 'Marcar falta', () => setStatus(b, 'falta')), iconBtn('cancel', 'Cancelar', () => setStatus(b, 'cancelada')));
   } else {
     box.append(iconBtn('undo', 'Repor como confirmada', () => setStatus(b, 'confirmada')));
@@ -159,11 +160,13 @@ async function refresh(silent) {
     if ($('#ffrom').value) qs.set('from', $('#ffrom').value);
     if ($('#fto').value) qs.set('to', $('#fto').value);
     if ($('#fstatus').value) qs.set('status', $('#fstatus').value);
-    const [stats, filtered, today] = await Promise.all([
+    const [stats, filtered, today, notes] = await Promise.all([
       api('/api/admin/stats'),
       api('/api/admin/bookings?' + qs),
       api(`/api/admin/bookings?from=${CFG.today}&to=${CFG.today}`),
+      api('/api/admin/notifications'),
     ]);
+    renderMessages(notes);
     STATS = stats;
     const todays = today.bookings.filter((b) => b.date === stats.today);
     renderKpis(stats);
@@ -181,6 +184,21 @@ async function refresh(silent) {
     lastIds = ids;
     $('#liveLabel').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
   } catch (e) { if (!silent) toast(e.message); }
+}
+
+const KIND_LABEL = { confirmacao: 'Confirmação', nova: 'Nova marcação', lembrete: 'Lembrete', cancelamento: 'Cancelamento' };
+const STATUS_MSG = { enviada: 'Enviada', manual: 'Por enviar', falhou: 'Falhou' };
+function renderMessages({ channels, items }) {
+  const on = [channels.sms && (channels.twilioKind === 'whatsapp' ? 'WhatsApp' : 'SMS'), channels.telegram && 'Telegram', channels.email && 'Email'].filter(Boolean);
+  $('#channelsLabel').textContent = on.length ? 'Envio automático: ' + on.join(', ') : 'Envio automático desligado';
+  $('#msgs').replaceChildren(...(items.length ? items.map((n) => {
+    const when = new Date(n.created_at.replace(' ', 'T') + 'Z').toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const action = n.whatsapp ? el('a', { class: 'btn-wa', href: n.whatsapp, target: '_blank', rel: 'noopener' }, 'Enviar no WhatsApp') : el('span');
+    return el('div', { class: 'msg' },
+      el('span', { class: 'tag ' + n.status, title: n.error || '' }, STATUS_MSG[n.status] || n.status),
+      el('div', {}, el('strong', {}, `${KIND_LABEL[n.kind] || n.kind} → ${n.audience === 'cliente' ? (n.client_name || 'cliente') : 'barbeiro'}`), el('small', { class: 'muted' }, ` · ${when}${n.channel !== 'whatsapp-manual' ? ' · ' + n.channel : ''}`), el('p', {}, n.message)),
+      action);
+  }) : [el('p', { class: 'muted' }, 'Ainda não há mensagens.')]));
 }
 
 // ---------- Manual booking ----------

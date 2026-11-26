@@ -49,8 +49,7 @@ function renderShop() {
     const r = CFG.hours[d] || [];
     return el('li', { class: d === todayWd ? 'today' : '' }, el('span', {}, DAYS[d]), el('span', {}, r.length ? r.map((x) => x.join('–')).join(' · ') : 'Fechado'));
   });
-  $('#heroHours').append(...hourRows);
-  $('#infoHours').append(...hourRows.map((n) => n.cloneNode(true)));
+  $('#infoHours').append(...hourRows);
 
   // Open now?
   const now = new Date();
@@ -64,7 +63,7 @@ function renderShop() {
   $('#openDot').classList.toggle('open', !!open);
   $('#openText').textContent = open ? `Aberto agora · até às ${open[1]}` : next ? `Fechado · abre às ${next[0]}` : 'Fechado hoje';
 
-  $('#servicesList').append(...CFG.services.map((sv) => el('article', { class: 'service reveal' },
+  $('#servicesList').append(...CFG.services.map((sv) => el('article', { class: 'service' },
     el('div', { class: 'top' }, el('h3', {}, sv.name), el('span', { class: 'price' }, eur(sv.price))),
     el('p', {}, sv.description),
     el('span', { class: 'chip' }, `⏱ ${sv.minutes} min`),
