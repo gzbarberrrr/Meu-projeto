@@ -79,7 +79,7 @@ Sem nenhum canal configurado, as mensagens ficam no dashboard como "Por enviar" 
 O site precisa de um servidor sempre ligado e de um disco que não se apague, onde fica a base de dados das marcações. O Railway trata disso com poucos cliques.
 
 1. Entre em https://railway.com com a conta do GitHub e ative o plano **Hobby**.
-2. **New Project → Deploy from GitHub repo** e escolha este repositório (ramo `main`).
+2. **New Project → Deploy from GitHub repo** e escolha este repositório. Em **Settings → Source → Branch** escolha o ramo com o site (neste momento `claude/vibrant-fermat-kap60b`).
 3. No serviço criado, clique com o botão direito → **Attach volume** e use o caminho de montagem `/data`.
 4. Em **Variables**, adicione:
    - `ADMIN_PASSWORD`: a palavra-passe do dashboard (nunca a escreva nos ficheiros do repositório)
@@ -89,4 +89,4 @@ O site precisa de um servidor sempre ligado e de um disco que não se apague, on
 5. Em **Settings → Networking → Generate Domain** recebe um endereço público `https://…up.railway.app`. Pode depois ligar um domínio próprio (ex.: `gzbarber.pt`) em **Custom Domain**.
 6. Abra o endereço, faça uma marcação de teste e entre em `/admin`.
 
-Cada vez que houver alterações no ramo `main` do GitHub, o Railway publica a nova versão sozinho. As marcações ficam no volume e não se perdem.
+Cada vez que houver alterações nesse ramo do GitHub, o Railway publica a nova versão sozinho. As marcações ficam no volume e não se perdem.
