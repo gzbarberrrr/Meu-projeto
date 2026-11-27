@@ -300,7 +300,8 @@ async function handle(req, res) {
 
   // Admin auth
   if (m === 'POST' && p === '/api/admin/login') {
-    const ip = req.socket.remoteAddress;
+    // Behind a hosting proxy the real client IP is the first X-Forwarded-For entry
+    const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
     if (tooManyAttempts(ip)) return send(res, 429, { error: 'Demasiadas tentativas. Tente daqui a 15 minutos.' });
     const body = await readBody(req);
     const a = Buffer.from(String(body.password || '')), b = Buffer.from(ADMIN_PASSWORD);
@@ -309,7 +310,8 @@ async function handle(req, res) {
       return send(res, 401, { error: 'Palavra-passe errada.' });
     }
     const token = sign({ exp: Date.now() + 12 * 3600 * 1000 });
-    return send(res, 200, { ok: true }, { 'Set-Cookie': `session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200` });
+    const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+    return send(res, 200, { ok: true }, { 'Set-Cookie': `session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${secure}` });
   }
   if (m === 'POST' && p === '/api/admin/logout') {
     return send(res, 200, { ok: true }, { 'Set-Cookie': 'session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });

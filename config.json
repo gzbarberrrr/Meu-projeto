@@ -3,9 +3,9 @@
     "name": "GZBarber",
     "tagline": "Barbershop desde 2024. Cortes com detalhe por 7 €, marcação em segundos.",
     "address": "",
-    "phone": "+351 900 000 000",
-    "whatsapp": "351900000000",
-    "email": "geral@exemplo.pt",
+    "phone": "+351 915 670 736",
+    "whatsapp": "351915670736",
+    "email": "guiconcalves00@gmail.com",
     "instagram": "",
     "nif": "000000000",
     "timezone": "Europe/Lisbon"
@@ -101,7 +101,7 @@
     {
       "id": "b1",
       "name": "GZ",
-      "phone": ""
+      "phone": "915670736"
     }
   ],
   "services": [
@@ -115,6 +115,6 @@
   ],
   "notifications": {
     "reminderHoursBefore": 24,
-    "barberPhone": ""
+    "barberPhone": "915670736"
   }
 }

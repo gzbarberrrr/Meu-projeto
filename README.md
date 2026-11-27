@@ -74,6 +74,19 @@ Sem nenhum canal configurado, as mensagens ficam no dashboard como "Por enviar" 
 | `SESSION_SECRET` | Mantém a sessão após reinício | aleatório |
 | `PUBLIC_URL` | Endereço do site nas mensagens | vazio |
 
-## Publicar
+## Publicar (Railway)
 
-Funciona em qualquer serviço que corra Node.js com disco persistente (por exemplo Render, Railway, Fly.io ou um VPS). Garanta que a pasta `data/` fica num disco persistente, senão as marcações perdem-se a cada novo deploy, e use HTTPS.
+O site precisa de um servidor sempre ligado e de um disco que não se apague, onde fica a base de dados das marcações. O Railway trata disso com poucos cliques.
+
+1. Entre em https://railway.com com a conta do GitHub e ative o plano **Hobby**.
+2. **New Project → Deploy from GitHub repo** e escolha este repositório (ramo `main`).
+3. No serviço criado, clique com o botão direito → **Attach volume** e use o caminho de montagem `/data`.
+4. Em **Variables**, adicione:
+   - `ADMIN_PASSWORD`: a palavra-passe do dashboard (nunca a escreva nos ficheiros do repositório)
+   - `DB_PATH` = `/data/barbearia.db`
+   - `SESSION_SECRET`: um texto aleatório comprido (mantém o login depois de reinícios)
+   - `PUBLIC_URL`: o endereço do site, depois do passo 5
+5. Em **Settings → Networking → Generate Domain** recebe um endereço público `https://…up.railway.app`. Pode depois ligar um domínio próprio (ex.: `gzbarber.pt`) em **Custom Domain**.
+6. Abra o endereço, faça uma marcação de teste e entre em `/admin`.
+
+Cada vez que houver alterações no ramo `main` do GitHub, o Railway publica a nova versão sozinho. As marcações ficam no volume e não se perdem.
